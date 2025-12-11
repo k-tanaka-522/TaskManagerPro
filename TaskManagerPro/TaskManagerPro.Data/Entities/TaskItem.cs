@@ -30,9 +30,16 @@ public class TaskItem
 
     public decimal PriorityScore { get; set; } = 0.0m;
 
-    public bool IsCompleted { get; set; } = false;
+    public TaskStatus Status { get; set; } = TaskStatus.Todo;
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
+}
+
+public enum TaskStatus
+{
+    Todo = 0,
+    InProgress = 1,
+    Done = 2
 }

@@ -19,11 +19,12 @@ public class SqliteTaskRepository : ITaskRepository
 
     public async Task<IEnumerable<TaskItem>> GetAllAsync()
     {
-        return await _context.Tasks
+        var tasks = await _context.Tasks
             .Include(t => t.Category)
-            .OrderByDescending(t => t.PriorityScore) // Default sort
             .AsNoTracking()
             .ToListAsync();
+            
+        return tasks.OrderByDescending(t => t.PriorityScore);
     }
 
     public async Task<TaskItem?> GetByIdAsync(int id)

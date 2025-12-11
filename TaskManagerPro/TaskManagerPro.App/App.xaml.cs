@@ -61,6 +61,8 @@ public partial class App : Application
             using (var scope = Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                // DEV MODE: Reset DB for schema changes
+                context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
             }
 

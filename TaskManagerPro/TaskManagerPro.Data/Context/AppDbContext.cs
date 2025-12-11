@@ -49,6 +49,6 @@ public class AppDbContext : DbContext
         );
 
         modelBuilder.Entity<TaskItem>()
-            .HasIndex(t => new { t.IsCompleted, t.PriorityScore }); // For performant sorting
+            .HasIndex(t => new { t.Status, t.PriorityScore }); // For performant sorting
     }
 }

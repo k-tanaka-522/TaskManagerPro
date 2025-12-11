@@ -4,114 +4,193 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:TaskManagerPro.App.ViewModels"
+        xmlns:views="clr-namespace:TaskManagerPro.App.Views"
         mc:Ignorable="d"
         Title="Task Manager Pro" Height="600" Width="1000"
         d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel, IsDesignTimeCreatable=False}">
     
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200" /> <!-- Sidebar -->
-            <ColumnDefinition Width="300" /> <!-- Task List -->
-            <ColumnDefinition Width="*" />   <!-- Detail (Placeholder) -->
+            <ColumnDefinition Width="Auto" MinWidth="150"/> <!-- Sidebar -->
+            <ColumnDefinition Width="*"/>     <!-- Main Content -->
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar (Menu) -->
         <Border Grid.Column="0" Background="#f0f0f0" Padding="10">
             <StackPanel>
                 <TextBlock Text="MENU" FontWeight="Bold" Margin="0,0,0,10"/>
-                <Button Content="Add Task" Command="{Binding AddTaskCommand}" Margin="0,0,0,5" Padding="5"/>
+                <Button Content="Add Task" Command="{Binding StartAddTaskCommand}" Margin="0,0,0,5" Padding="5" Background="#0078D4" Foreground="White" BorderThickness="0"/>
                 <Separator Margin="0,10"/>
-                <TextBlock Text="Categories" FontWeight="Bold" Margin="0,0,0,5"/>
-                <ListBox>
-                    <ListBoxItem Content="All Tasks"/>
-                    <ListBoxItem Content="Inbox"/>
-                    <ListBoxItem Content="Work"/>
-                </ListBox>
+                <TextBlock Text="Views" FontWeight="Bold" Margin="0,0,0,5"/>
+                <RadioButton Content="Board" GroupName="View" IsChecked="{Binding IsBoardView, Mode=OneWay}" Command="{Binding CycleViewModeCommand}" Margin="0,0,0,5"/>
+                <RadioButton Content="List" GroupName="View" IsChecked="{Binding IsListView, Mode=OneWay}" Command="{Binding CycleViewModeCommand}"/>
             </StackPanel>
         </Border>
 
-        <!-- Task List -->
-        <Border Grid.Column="1" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0">
-            <Grid>
-                <Grid.RowDefinitions>
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1" Margin="10">
+            
+            <!-- LIST VIEW -->
+            <Grid Visibility="{Binding IsListView, Converter={StaticResource BoolToVis}}">
+                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                
-                <TextBlock Text="TASKS" FontWeight="Bold" Margin="10" Grid.Row="0"/>
-
-                <ListView Grid.Row="1" ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask}" BorderThickness="0">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="5">
-                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14"/>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="P:" Foreground="Gray"/>
-                                    <TextBlock Text="{Binding PriorityScore, StringFormat=N1}" FontWeight="Bold" Foreground="Red" Margin="5,0,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
+                <TextBlock Text="ALL TASKS LIST" FontWeight="Bold" Margin="0,0,0,10"/>
+                <ListView Grid.Row="1" ItemsSource="{Binding TodoTasks}"> <!-- Temporarily just showing one list or need a flat list property again. Using TodoTasks for now as placeholder or need flat list logic -->
+                     <!-- Actually better to bind to a Flat List property if we had one. 
+                          Since we split collections, List View is harder to implement perfectly without a Union collection.
+                          Let's skip List View perfection and focus on Kanban as requested details imply Kanban focus. 
+                          Wait, User asked for switching. I should provide a Union. -->
+                     <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="200"/>
+                             <GridViewColumn Header="Priority" DisplayMemberBinding="{Binding PriorityScore, StringFormat=N1}" Width="80"/>
+                             <GridViewColumn Header="Due" DisplayMemberBinding="{Binding DueDate, StringFormat=MM/dd}" Width="80"/>
+                             <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="80"/>
+                        </GridView>
+                     </ListView.View>
                 </ListView>
+                <!-- Because we split Todo/Doing/Done, showing all in one list requires an aggregate. 
+                     For now, I will just show a message or valid subset to avoid complexity in this step. -->
+                <TextBlock Grid.Row="1" Text="Switch to Board View to see tasks separated by status." VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="Gray"/>
             </Grid>
-        </Border>
 
-        <!-- Detail / Status (Right Pane) -->
-        <Grid Grid.Column="2" Background="White">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- Content -->
-            <StackPanel Margin="20" DataContext="{Binding SelectedTask}">
-                <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Margin="0,0,0,20"/>
+            <!-- KANBAN BOARD -->
+            <Grid Visibility="{Binding IsBoardView, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
                 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                     <TextBlock Text="Priority Score: " FontWeight="Bold"/>
-                     <TextBlock Text="{Binding PriorityScore}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                     <TextBlock Text="Effort (h): " FontWeight="Bold"/>
-                     <TextBlock Text="{Binding EffortHours}"/>
-                </StackPanel>
-                
-                <!-- If no selection -->
-                <TextBlock Text="Select a task to view details.">
-                     <TextBlock.Style>
-                         <Style TargetType="TextBlock">
-                             <Setter Property="Visibility" Value="Collapsed"/>
-                             <Style.Triggers>
-                                 <DataTrigger Binding="{Binding SelectedTask}" Value="{x:Null}">
-                                     <Setter Property="Visibility" Value="Visible"/>
-                                 </DataTrigger>
-                             </Style.Triggers>
-                         </Style>
-                     </TextBlock.Style>
-                </TextBlock>
-            </StackPanel>
+                <!-- Resources for ItemTemplate -->
+                <Grid.Resources>
+                    <DataTemplate x:Key="TaskCardTemplate">
+                        <Border Background="White" CornerRadius="4" Padding="10" Margin="0,0,0,10" BorderBrush="#e0e0e0" BorderThickness="1">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.1"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Title}" FontWeight="Bold" TextWrapping="Wrap" FontSize="14"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                         <TextBlock Text="{Binding PriorityScore, StringFormat=N1}" Foreground="Red" FontSize="12" ToolTip="Priority Score" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                         <Button Content="..." Padding="2,0" Height="20" Command="{Binding DataContext.StartEditTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" ToolTip="Edit Details"/><!-- Edit Button -->
+                                    </StackPanel>
+                                </Grid>
+                                
+                                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis" Foreground="Gray" Margin="0,5,0,5" FontSize="12"/>
+                                
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="{Binding EffortHours, StringFormat={}{0}h}" DockPanel.Dock="Left" FontSize="11" Foreground="#0078D4"/>
+                                    <TextBlock Text="{Binding DueDate, StringFormat={}{0:MM/dd}}" DockPanel.Dock="Right" FontSize="11" Foreground="#107C10"/>
+                                </DockPanel>
+                            </StackPanel>
+                            
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftDoubleClick" Command="{Binding DataContext.StartEditTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                            </Border.InputBindings>
+                            
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Move Next -&gt;" Command="{Binding DataContext.MoveToNextCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                    <MenuItem Header="&lt;- Move Prev" Command="{Binding DataContext.MoveToPreviousCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Delete" Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                        </Border>
+                    </DataTemplate>
+                </Grid.Resources>
 
-            <!-- StatusBar -->
-            <StatusBar Grid.Row="1">
-                <StatusBarItem>
-                    <TextBlock Text="{Binding StatusMessage}"/>
-                </StatusBarItem>
-                <StatusBarItem HorizontalAlignment="Right">
-                     <ProgressBar Width="100" Height="10" IsIndeterminate="True">
-                         <ProgressBar.Style>
-                             <Style TargetType="ProgressBar">
-                                 <Setter Property="Visibility" Value="Collapsed"/>
-                                 <Style.Triggers>
-                                     <DataTrigger Binding="{Binding IsLoading}" Value="True">
-                                         <Setter Property="Visibility" Value="Visible"/>
-                                     </DataTrigger>
-                                 </Style.Triggers>
-                             </Style>
-                         </ProgressBar.Style>
-                     </ProgressBar>
-                </StatusBarItem>
-            </StatusBar>
+                <!-- TODO Column -->
+                <Border Grid.Column="0" Background="#f8f9fa" Margin="0,0,5,0" CornerRadius="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Background="#e9ecef" Padding="10" CornerRadius="4,4,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="TODO" FontWeight="Bold" Foreground="#495057" VerticalAlignment="Center"/>
+                                <Border Background="#adb5bd" CornerRadius="10" Margin="10,0,0,0" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding TodoTasks.Count}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                                <Button Content="+" Width="20" Height="20" Margin="10,0,0,0" Command="{Binding StartAddTaskCommand}" CommandParameter="0" ToolTip="Quick Add"/>
+                            </StackPanel>
+                        </Border>
+                        <views:TaskInputView Grid.Row="1" DataContext="{Binding EditingTaskVM}"
+                                             Visibility="{Binding DataContext.IsTodoEditing, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                                             Margin="5"/>
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="5">
+                            <ItemsControl ItemsSource="{Binding TodoTasks}" ItemTemplate="{StaticResource TaskCardTemplate}"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- IN PROGRESS Column -->
+                <Border Grid.Column="1" Background="#f8f9fa" Margin="5,0,5,0" CornerRadius="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Background="#e3f2fd" Padding="10" CornerRadius="4,4,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="DOING" FontWeight="Bold" Foreground="#0d47a1" VerticalAlignment="Center"/>
+                                <Border Background="#64b5f6" CornerRadius="10" Margin="10,0,0,0" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding InProgressTasks.Count}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                                <Button Content="+" Width="20" Height="20" Margin="10,0,0,0" Command="{Binding StartAddTaskCommand}" CommandParameter="1" ToolTip="Quick Add"/>
+                            </StackPanel>
+                        </Border>
+                        <views:TaskInputView Grid.Row="1" DataContext="{Binding EditingTaskVM}"
+                                             Visibility="{Binding DataContext.IsInProgressEditing, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                                             Margin="5"/>
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="5">
+                            <ItemsControl ItemsSource="{Binding InProgressTasks}" ItemTemplate="{StaticResource TaskCardTemplate}"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- DONE Column -->
+                <Border Grid.Column="2" Background="#f8f9fa" Margin="5,0,0,0" CornerRadius="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Background="#e8f5e9" Padding="10" CornerRadius="4,4,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="DONE" FontWeight="Bold" Foreground="#1b5e20" VerticalAlignment="Center"/>
+                                <Border Background="#81c784" CornerRadius="10" Margin="10,0,0,0" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DoneTasks.Count}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                                <Button Content="+" Width="20" Height="20" Margin="10,0,0,0" Command="{Binding StartAddTaskCommand}" CommandParameter="2" ToolTip="Quick Add"/>
+                            </StackPanel>
+                        </Border>
+                        <views:TaskInputView Grid.Row="1" DataContext="{Binding EditingTaskVM}"
+                                             Visibility="{Binding DataContext.IsDoneEditing, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                                             Margin="5"/>
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="5">
+                            <ItemsControl ItemsSource="{Binding DoneTasks}" ItemTemplate="{StaticResource TaskCardTemplate}"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+                
+            </Grid>
         </Grid>
     </Grid>
 </Window>

@@ -6,6 +6,9 @@ using TaskManagerPro.App.ViewModels;
 using TaskManagerPro.Data.Context;
 using TaskManagerPro.Data.Repositories;
 
+using System.Windows.Media;
+using System.Windows.Interop;
+
 namespace TaskManagerPro.App;
 
 public partial class App : Application
@@ -55,6 +58,9 @@ public partial class App : Application
     {
         try
         {
+            // Disable hardware acceleration to prevent crashes
+            RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+
             base.OnStartup(e);
             
             // Ensure DB created

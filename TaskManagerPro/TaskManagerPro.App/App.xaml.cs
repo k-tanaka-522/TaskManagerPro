@@ -56,6 +56,15 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Global exception handling
+        DispatcherUnhandledException += (s, args) =>
+        {
+            var log = $"Unhandled Exception: {args.Exception.Message}\n{args.Exception.StackTrace}";
+            System.IO.File.WriteAllText("crash_log.txt", log);
+            MessageBox.Show(log, "Crash Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            args.Handled = true; // Prevent app termination if possible
+        };
+
         try
         {
             // Disable hardware acceleration to prevent crashes

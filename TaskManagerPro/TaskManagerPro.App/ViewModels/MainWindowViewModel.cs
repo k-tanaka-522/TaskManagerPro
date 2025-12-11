@@ -70,26 +70,29 @@ public partial class MainWindowViewModel : ObservableObject
             StatusMessage = "Loading tasks...";
             var allItems = await _repository.GetAllAsync();
             
-            // Update ToDo
-            TodoTasks.Clear();
-            foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.Todo))
+            Application.Current.Dispatcher.Invoke(() => 
             {
-                TodoTasks.Add(item);
-            }
+                // Update ToDo
+                TodoTasks.Clear();
+                foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.Todo))
+                {
+                    TodoTasks.Add(item);
+                }
 
-            // Update InProgress
-            InProgressTasks.Clear();
-            foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.InProgress))
-            {
-                InProgressTasks.Add(item);
-            }
+                // Update InProgress
+                InProgressTasks.Clear();
+                foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.InProgress))
+                {
+                    InProgressTasks.Add(item);
+                }
 
-            // Update Done
-            DoneTasks.Clear();
-            foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.Done))
-            {
-                DoneTasks.Add(item);
-            }
+                // Update Done
+                DoneTasks.Clear();
+                foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.Done))
+                {
+                    DoneTasks.Add(item);
+                }
+            });
             
             StatusMessage = $"Loaded {allItems.Count()} tasks.";
         }

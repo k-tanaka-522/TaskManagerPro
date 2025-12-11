@@ -15,11 +15,19 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ITaskRepository _repository;
 
-
-
     public MainWindowViewModel(ITaskRepository repository)
     {
         _repository = repository;
+        Log("ViewModel Created");
+    }
+
+    private void Log(string message)
+    {
+        try
+        {
+            System.IO.File.AppendAllText("debug.log", $"{DateTime.Now:HH:mm:ss.fff}: {message}\n");
+        }
+        catch { }
     }
 
     // Kanban Columns
@@ -64,14 +72,17 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadAsync()
     {
+        Log("LoadAsync Started");
         try
         {
             IsLoading = true;
             StatusMessage = "Loading tasks...";
             var allItems = await _repository.GetAllAsync();
+            Log($"LoadAsync: Retrieved {allItems.Count()} items from DB");
             
             Application.Current.Dispatcher.Invoke(() => 
             {
+                Log("LoadAsync: Updating ToDo");
                 // Update ToDo
                 TodoTasks.Clear();
                 foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.Todo))
@@ -79,6 +90,7 @@ public partial class MainWindowViewModel : ObservableObject
                     TodoTasks.Add(item);
                 }
 
+                Log("LoadAsync: Updating InProgress");
                 // Update InProgress
                 InProgressTasks.Clear();
                 foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.InProgress))
@@ -86,6 +98,7 @@ public partial class MainWindowViewModel : ObservableObject
                     InProgressTasks.Add(item);
                 }
 
+                Log("LoadAsync: Updating Done");
                 // Update Done
                 DoneTasks.Clear();
                 foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.Done))
@@ -95,9 +108,11 @@ public partial class MainWindowViewModel : ObservableObject
             });
             
             StatusMessage = $"Loaded {allItems.Count()} tasks.";
+            Log("LoadAsync Finished Successfully");
         }
         catch (Exception ex)
         {
+            Log($"LoadAsync Error: {ex}");
             StatusMessage = $"Error: {ex.Message}";
             MessageBox.Show($"Error loading tasks: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -127,6 +142,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public void StartAddTask(string? statusStr)
     {
+        Log($"StartAddTask: {statusStr}");
         Data.Entities.TaskStatus initialStatus = Data.Entities.TaskStatus.Todo;
         if (!string.IsNullOrEmpty(statusStr) && Enum.TryParse(typeof(Data.Entities.TaskStatus), statusStr, out var result))
         {
@@ -150,6 +166,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public async Task SaveTaskAsync()
     {
+        Log("SaveTaskAsync Started");
         try 
         {
             var vm = EditingTaskVM;
@@ -157,11 +174,13 @@ public partial class MainWindowViewModel : ObservableObject
 
             if (vm.Id.HasValue)
             {
+                Log($"SaveTaskAsync: Updating existing task {vm.Id}");
                 // Update
                 taskToSave = await _repository.GetByIdAsync(vm.Id.Value);
                 if (taskToSave == null) 
                 {
                     StatusMessage = "Error: Task not found.";
+                    Log("SaveTaskAsync: Task not found");
                     return;
                 }
                 
@@ -171,39 +190,43 @@ public partial class MainWindowViewModel : ObservableObject
                 taskToSave.DueDate = vm.DueDate;
                 taskToSave.ImpactScore = vm.ImpactScore;
                 taskToSave.UrgencyScore = vm.UrgencyScore;
-                taskToSave.Status = vm.Status; // Update status if changed in parsed vm? Or keep EditingStatus?
-                // Actually VM status might not change if UI doesn't allow it, but let's assume it stays in the column for now.
-                // If user changes 'EditingStatus' column, we should reflect that? The inline form doesn't expose status selector usually.
-                // We use EditingStatus to determine which column.
-                // But wait, the form is in a specific column. So Status is implicit.
+                taskToSave.Status = vm.Status; 
                 taskToSave.Status = EditingStatus;
                 
                 taskToSave.PriorityScore = TaskPriorityService.Calculate(taskToSave);
                 taskToSave.UpdatedAt = DateTime.Now;
 
+                Log("SaveTaskAsync: Calling Repository Update");
                 await _repository.UpdateAsync(taskToSave);
                 StatusMessage = $"Updated: {taskToSave.Title}";
             }
             else
             {
+                Log("SaveTaskAsync: Creating new task");
                 // Create
                 taskToSave = vm.ToEntity();
                 taskToSave.CreatedAt = DateTime.Now;
                 taskToSave.UpdatedAt = DateTime.Now;
-                taskToSave.Status = EditingStatus; // New tasks created in the column where '+' was clicked
+                taskToSave.Status = EditingStatus; 
                 
                 taskToSave.PriorityScore = TaskPriorityService.Calculate(taskToSave);
                 taskToSave.CategoryId = 1;
 
+                Log($"SaveTaskAsync: Calling Repository Add. Title={taskToSave.Title}, Status={taskToSave.Status}");
                 await _repository.AddAsync(taskToSave);
                 StatusMessage = "Task added.";
             }
 
+            Log("SaveTaskAsync: DB Op Success. Closing Editor.");
             IsEditing = false;
+            await Task.Delay(200);
+            Log("SaveTaskAsync: Reloading");
             await LoadAsync();
+            Log("SaveTaskAsync: Finished");
         }
         catch (Exception ex)
         {
+            Log($"SaveTaskAsync Error: {ex}");
             StatusMessage = $"Error saving: {ex.Message}";
             MessageBox.Show($"Error saving task: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -249,7 +272,7 @@ public partial class MainWindowViewModel : ObservableObject
         var vm = new TaskDetailViewModel();
         vm.LoadFromEntity(task);
         
-        EditingStatus = task.Status; // Show form in the task's current column
+        EditingStatus = task.Status; 
         EditingTaskVM = vm;
         IsEditing = true;
         StatusMessage = $"Editing: {task.Title}";
@@ -274,15 +297,10 @@ public partial class MainWindowViewModel : ObservableObject
         task.Status = newStatus;
         task.UpdatedAt = DateTime.Now;
         
-        // Priority recalculation might be needed if rules depend on status (not currently, but logic is in Service)
-        // task.PriorityScore = TaskPriorityService.Calculate(task); 
-
         try 
         {
             await _repository.UpdateAsync(task);
             
-            // Optimistic UI update or full reload?
-            // Full reload is safer for now to sync lists
             await LoadAsync();
             StatusMessage = $"Moved to {newStatus}";
         }

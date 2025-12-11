@@ -11,6 +11,7 @@
     
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="5" ShadowDepth="2" Opacity="0.1"/>
     </Window.Resources>
 
     <Grid>

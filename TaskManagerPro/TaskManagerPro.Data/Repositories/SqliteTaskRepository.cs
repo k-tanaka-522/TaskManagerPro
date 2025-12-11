@@ -44,18 +44,28 @@ public class SqliteTaskRepository : ITaskRepository
 
     public async Task UpdateAsync(TaskItem task)
     {
-        var local = _context.Set<TaskItem>()
-            .Local
-            .FirstOrDefault(entry => entry.Id.Equals(task.Id));
-            
-        if (local != null)
+        // Try to find the entity in the local cache or database
+        var existingTask = _context.Tasks.Local.FirstOrDefault(t => t.Id == task.Id);
+        
+        if (existingTask == null)
         {
-            _context.Entry(local).State = EntityState.Detached;
+            existingTask = await _context.Tasks.FindAsync(task.Id);
         }
 
-        task.UpdatedAt = DateTime.Now;
-        _context.Tasks.Update(task);
-        await _context.SaveChangesAsync();
+        if (existingTask != null)
+        {
+            // Copy scalar properties
+            _context.Entry(existingTask).CurrentValues.SetValues(task);
+            
+            // Explicitly set UpdatedAt
+            existingTask.UpdatedAt = DateTime.Now;
+
+            // Save changes
+            await _context.SaveChangesAsync();
+            
+            // Detach to allow future updates with different instances
+            _context.Entry(existingTask).State = EntityState.Detached;
+        }
     }
 
     public async Task DeleteAsync(int id)

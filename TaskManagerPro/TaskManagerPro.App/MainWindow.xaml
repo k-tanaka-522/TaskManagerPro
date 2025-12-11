@@ -71,10 +71,9 @@
                 <!-- Resources for ItemTemplate -->
                 <Grid.Resources>
                     <DataTemplate x:Key="TaskCardTemplate">
-                        <Border Background="White" CornerRadius="4" Padding="10" Margin="0,0,0,10" BorderBrush="#e0e0e0" BorderThickness="1">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.1"/>
-                            </Border.Effect>
+                        <Border Background="White" CornerRadius="4" Padding="10" Margin="0,0,0,10" BorderBrush="#e0e0e0" BorderThickness="1"
+                                Effect="{StaticResource CardShadow}"
+                                PreviewMouseLeftButtonDown="TaskCard_PreviewMouseLeftButtonDown" MouseMove="TaskCard_MouseMove">
                             <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -113,7 +112,8 @@
                 </Grid.Resources>
 
                 <!-- TODO Column -->
-                <Border Grid.Column="0" Background="#f8f9fa" Margin="0,0,5,0" CornerRadius="4">
+                <Border Grid.Column="0" Background="#f8f9fa" Margin="0,0,5,0" CornerRadius="4"
+                        AllowDrop="True" Drop="Column_Drop" DragOver="Column_DragOver" Tag="0">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -139,7 +139,8 @@
                 </Border>
 
                 <!-- IN PROGRESS Column -->
-                <Border Grid.Column="1" Background="#f8f9fa" Margin="5,0,5,0" CornerRadius="4">
+                <Border Grid.Column="1" Background="#f8f9fa" Margin="5,0,5,0" CornerRadius="4"
+                        AllowDrop="True" Drop="Column_Drop" DragOver="Column_DragOver" Tag="1">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -165,7 +166,8 @@
                 </Border>
 
                 <!-- DONE Column -->
-                <Border Grid.Column="2" Background="#f8f9fa" Margin="5,0,0,0" CornerRadius="4">
+                <Border Grid.Column="2" Background="#f8f9fa" Margin="5,0,0,0" CornerRadius="4"
+                        AllowDrop="True" Drop="Column_Drop" DragOver="Column_DragOver" Tag="2">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>

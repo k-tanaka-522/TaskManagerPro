@@ -261,4 +261,32 @@ public partial class MainWindowViewModel : ObservableObject
          await LoadAsync();
          StatusMessage = $"Deleted: {task.Title}";
     }
+
+    public async Task UpdateTaskStatusAsync(TaskItem task, Data.Entities.TaskStatus newStatus)
+    {
+        if (task == null) return;
+        if (task.Status == newStatus) return;
+
+        var oldStatus = task.Status;
+        task.Status = newStatus;
+        task.UpdatedAt = DateTime.Now;
+        
+        // Priority recalculation might be needed if rules depend on status (not currently, but logic is in Service)
+        // task.PriorityScore = TaskPriorityService.Calculate(task); 
+
+        try 
+        {
+            await _repository.UpdateAsync(task);
+            
+            // Optimistic UI update or full reload?
+            // Full reload is safer for now to sync lists
+            await LoadAsync();
+            StatusMessage = $"Moved to {newStatus}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error moving task: {ex.Message}";
+            MessageBox.Show($"Error moving task: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
 }

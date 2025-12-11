@@ -42,23 +42,19 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <TextBlock Text="ALL TASKS LIST" FontWeight="Bold" Margin="0,0,0,10"/>
-                <ListView Grid.Row="1" ItemsSource="{Binding TodoTasks}"> <!-- Temporarily just showing one list or need a flat list property again. Using TodoTasks for now as placeholder or need flat list logic -->
-                     <!-- Actually better to bind to a Flat List property if we had one. 
-                          Since we split collections, List View is harder to implement perfectly without a Union collection.
-                          Let's skip List View perfection and focus on Kanban as requested details imply Kanban focus. 
-                          Wait, User asked for switching. I should provide a Union. -->
+                <ListView Grid.Row="1" ItemsSource="{Binding AllTasks}" BorderThickness="0">
                      <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="200"/>
-                             <GridViewColumn Header="Priority" DisplayMemberBinding="{Binding PriorityScore, StringFormat=N1}" Width="80"/>
-                             <GridViewColumn Header="Due" DisplayMemberBinding="{Binding DueDate, StringFormat=MM/dd}" Width="80"/>
-                             <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="80"/>
+                            <GridViewColumn Header="ID" DisplayMemberBinding="{Binding Id}" Width="40"/>
+                            <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="300"/>
+                            <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100"/>
+                            <GridViewColumn Header="Priority" DisplayMemberBinding="{Binding PriorityScore, StringFormat=N1}" Width="80"/>
+                            <GridViewColumn Header="Effort (h)" DisplayMemberBinding="{Binding EffortHours}" Width="70"/>
+                            <GridViewColumn Header="Due Date" DisplayMemberBinding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="100"/>
                         </GridView>
                      </ListView.View>
                 </ListView>
-                <!-- Because we split Todo/Doing/Done, showing all in one list requires an aggregate. 
-                     For now, I will just show a message or valid subset to avoid complexity in this step. -->
-                <TextBlock Grid.Row="1" Text="Switch to Board View to see tasks separated by status." VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="Gray"/>
+
             </Grid>
 
             <!-- KANBAN BOARD -->

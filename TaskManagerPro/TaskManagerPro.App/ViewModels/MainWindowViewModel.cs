@@ -41,6 +41,9 @@ public partial class MainWindowViewModel : ObservableObject
     private ObservableCollection<TaskItem> _doneTasks = new();
 
     [ObservableProperty]
+    private ObservableCollection<TaskItem> _allTasks = new();
+
+    [ObservableProperty]
     private TaskItem? _selectedTask;
 
     [ObservableProperty]
@@ -104,6 +107,13 @@ public partial class MainWindowViewModel : ObservableObject
                 foreach (var item in allItems.Where(t => t.Status == Data.Entities.TaskStatus.Done))
                 {
                     DoneTasks.Add(item);
+                }
+
+                Log("LoadAsync: Updating AllTasks");
+                AllTasks.Clear();
+                foreach (var item in allItems)
+                {
+                    AllTasks.Add(item);
                 }
             });
             

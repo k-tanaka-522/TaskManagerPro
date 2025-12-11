@@ -44,6 +44,15 @@ public class SqliteTaskRepository : ITaskRepository
 
     public async Task UpdateAsync(TaskItem task)
     {
+        var local = _context.Set<TaskItem>()
+            .Local
+            .FirstOrDefault(entry => entry.Id.Equals(task.Id));
+            
+        if (local != null)
+        {
+            _context.Entry(local).State = EntityState.Detached;
+        }
+
         task.UpdatedAt = DateTime.Now;
         _context.Tasks.Update(task);
         await _context.SaveChangesAsync();

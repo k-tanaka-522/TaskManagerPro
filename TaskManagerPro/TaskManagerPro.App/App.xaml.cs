@@ -77,7 +77,7 @@ public partial class App : Application
             {
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 // DEV MODE: Reset DB for schema changes
-                context.Database.EnsureDeleted();
+                // context.Database.EnsureDeleted(); // Commented out to persist data
                 context.Database.EnsureCreated();
             }
 

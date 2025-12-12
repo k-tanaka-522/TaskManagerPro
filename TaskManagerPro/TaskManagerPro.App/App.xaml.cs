@@ -6,9 +6,6 @@ using TaskManagerPro.App.ViewModels;
 using TaskManagerPro.Data.Context;
 using TaskManagerPro.Data.Repositories;
 
-using System.Windows.Media;
-using System.Windows.Interop;
-
 namespace TaskManagerPro.App;
 
 public partial class App : Application
@@ -18,15 +15,7 @@ public partial class App : Application
 
     public App()
     {
-        try
-        {
-            Services = ConfigureServices();
-        }
-        catch (Exception ex)
-        {
-            System.IO.File.WriteAllText("ctor_fatal.txt", ex.ToString());
-            throw;
-        }
+        Services = ConfigureServices();
     }
 
     private static IServiceProvider ConfigureServices()
@@ -56,41 +45,19 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        // Global exception handling
-        DispatcherUnhandledException += (s, args) =>
+        base.OnStartup(e);
+        
+        // Ensure DB created
+        using (var scope = Services.CreateScope())
         {
-            var log = $"Unhandled Exception: {args.Exception.Message}\n{args.Exception.StackTrace}";
-            System.IO.File.WriteAllText("crash_log.txt", log);
-            MessageBox.Show(log, "Crash Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            args.Handled = true; // Prevent app termination if possible
-        };
-
-        try
-        {
-            // Disable hardware acceleration to prevent crashes
-            RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
-
-            base.OnStartup(e);
-            
-            // Ensure DB created
-            using (var scope = Services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                // DEV MODE: Reset DB for schema changes
-                // context.Database.EnsureDeleted(); // Commented out to persist data
-                context.Database.EnsureCreated();
-            }
-
-            // Show Main Window
-            var mainWindow = Services.GetRequiredService<MainWindow>();
-            mainWindow.Show();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            // DEV MODE: Reset DB for schema changes
+            // context.Database.EnsureDeleted(); // Commented out to persist data
+            context.Database.EnsureCreated();
         }
-        catch (Exception ex)
-        {
-            var log = $"Startup Error: {ex.Message}\n{ex.StackTrace}";
-            System.IO.File.WriteAllText("startup_error.txt", log);
-            MessageBox.Show(log, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            Shutdown(1);
-        }
+
+        // Show Main Window
+        var mainWindow = Services.GetRequiredService<MainWindow>();
+        mainWindow.Show();
     }
 }

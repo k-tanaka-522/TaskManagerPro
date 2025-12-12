@@ -23,11 +23,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void Log(string message)
     {
-        try
-        {
-            System.IO.File.AppendAllText("debug.log", $"{DateTime.Now:HH:mm:ss.fff}: {message}\n");
-        }
-        catch { }
+        // Debug logging disabled for release
+        // try
+        // {
+        //     System.IO.File.AppendAllText("debug.log", $"{DateTime.Now:HH:mm:ss.fff}: {message}\n");
+        // }
+        // catch { }
     }
 
     // Kanban Columns
